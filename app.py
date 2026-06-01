@@ -4,7 +4,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from supabase import create_client, Client
 import time
-import io  # ✨ [추가] 차트를 메모리 이미지 버퍼로 변환하기 위해 필요합니다.
+import io  # 차트를 메모리 이미지 버퍼로 변환하기 위해 필요합니다.
 
 # 우리가 새로 만든 시뮬레이션 모듈의 함수를 가져옵니다!
 from simulation_engine import run_wildfire_simulation
@@ -21,6 +21,20 @@ supabase = init_supabase()
 
 st.set_page_config(page_title="원주 산불 방재 시뮬레이터", layout="wide")
 st.title("🌲 원주 지역 임도 기반 산불 확산 MVP 시뮬레이터 (엔진 분리형)")
+
+# 🔥 [핵심 추가] Streamlit 내부 컨테이너의 최대 가로폭 제한(Max-Width)을 풀고 100% 유연하게 만드는 CSS 주입
+st.markdown(
+    """
+    <style>
+    .block-container {
+        max-width: 100% !important;
+        padding-left: 5% !important;
+        padding-right: 5% !important;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True
+)
 
 # 2. Supabase DB에서 데이터 전량 고속 로드
 @st.cache_data
@@ -94,12 +108,12 @@ if st.button("🔥 산불 시뮬레이션 시작"):
         ax.set_title(f"Simulation Step: {step}")
         ax.axis("off")
         
-        # ✨ [수정 구간] 차트를 이진 이미지 데이터로 구워 Streamlit의 강력한 이미지 뷰어로 전달합니다.
+        # 차트를 이진 이미지 데이터로 구워 Streamlit의 강력한 이미지 뷰어로 전달합니다.
         buf = io.BytesIO()
         fig.savefig(buf, format="png", bbox_inches="tight", dpi=140)
         buf.seek(0)
         
-        # st.pyplot 대신 plot_spot.image를 통해 컨테이너 너비를 강제 추종(Responsive)시킵니다.
+        # 이제 외부 박스 제한이 완전히 풀렸으므로 창 크기에 밀접하게 반응형(Responsive) 연동됩니다.
         plot_spot.image(buf, use_container_width=True)
         
         plt.close(fig)
