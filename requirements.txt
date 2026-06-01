@@ -2,3 +2,4 @@ streamlit
 supabase
 numpy
 scipy
+matplotlib
