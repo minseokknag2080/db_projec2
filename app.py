@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 from supabase import create_client, Client
 import time
 
-# 🚨 우리가 새로 만든 시뮬레이션 모듈의 함수를 가져옵니다!
+# 우리가 새로 만든 시뮬레이션 모듈의 함수를 가져옵니다!
 from simulation_engine import run_wildfire_simulation
 
 # 1. Supabase 접속 설정
@@ -64,7 +64,7 @@ if st.button("🔥 산불 시뮬레이션 시작"):
     
     start_time = time.time()
     
-    # 3. 🚨 분리된 외부 엔진 모듈을 호출하여 연산 결과(History 리스트)를 통째로 받아옵니다!
+    # 3. 분리된 외부 엔진 모듈을 호출하여 연산 결과(History 리스트)를 통째로 받아옵니다!
     with st.spinner("simulation_engine에서 물리 알고리즘을 계산하는 중..."):
         history = run_wildfire_simulation(
             terrain_np=terrain_np,
@@ -80,7 +80,8 @@ if st.button("🔥 산불 시뮬레이션 시작"):
     for step, status_matrix in enumerate(history):
         status_text.text(f"⏳ 화면 렌더링 중... Step: {step}/{len(history)-1}")
         
-        fig, ax = plt.subplots(figsize=(7, 5))
+        # [변경포인트 1] tight_layout=True 옵션을 넣어주어 확대/축소 시 여백 레이아웃이 깨지지 않게 방지합니다.
+        fig, ax = plt.subplots(figsize=(7, 5), tight_layout=True)
         ax.imshow(terrain_np, cmap="gist_earth", origin="upper", alpha=0.6)
         
         if np.sum(road_np) > 0:
@@ -93,7 +94,8 @@ if st.button("🔥 산불 시뮬레이션 시작"):
         ax.set_title(f"Simulation Step: {step}")
         ax.axis("off")
         
-        plot_spot.pyplot(fig)
+        # [변경포인트 2] use_container_width=True를 추가하여 웹 브라우저 가로 폭에 맞추어 유연하게 반응하도록 설정합니다.
+        plot_spot.pyplot(fig, use_container_width=True)
         plt.close(fig)
         time.sleep(0.08)
         
