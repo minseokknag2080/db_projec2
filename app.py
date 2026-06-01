@@ -4,6 +4,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from supabase import create_client, Client
 import time
+import io  # ✨ [추가] 차트를 메모리 이미지 버퍼로 변환하기 위해 필요합니다.
 
 # 우리가 새로 만든 시뮬레이션 모듈의 함수를 가져옵니다!
 from simulation_engine import run_wildfire_simulation
@@ -80,7 +81,6 @@ if st.button("🔥 산불 시뮬레이션 시작"):
     for step, status_matrix in enumerate(history):
         status_text.text(f"⏳ 화면 렌더링 중... Step: {step}/{len(history)-1}")
         
-        # [변경포인트 1] tight_layout=True 옵션을 넣어주어 확대/축소 시 여백 레이아웃이 깨지지 않게 방지합니다.
         fig, ax = plt.subplots(figsize=(7, 5), tight_layout=True)
         ax.imshow(terrain_np, cmap="gist_earth", origin="upper", alpha=0.6)
         
@@ -94,8 +94,14 @@ if st.button("🔥 산불 시뮬레이션 시작"):
         ax.set_title(f"Simulation Step: {step}")
         ax.axis("off")
         
-        # [변경포인트 2] use_container_width=True를 추가하여 웹 브라우저 가로 폭에 맞추어 유연하게 반응하도록 설정합니다.
-        plot_spot.pyplot(fig, use_container_width=True)
+        # ✨ [수정 구간] 차트를 이진 이미지 데이터로 구워 Streamlit의 강력한 이미지 뷰어로 전달합니다.
+        buf = io.BytesIO()
+        fig.savefig(buf, format="png", bbox_inches="tight", dpi=140)
+        buf.seek(0)
+        
+        # st.pyplot 대신 plot_spot.image를 통해 컨테이너 너비를 강제 추종(Responsive)시킵니다.
+        plot_spot.image(buf, use_container_width=True)
+        
         plt.close(fig)
         time.sleep(0.08)
         
