@@ -22,14 +22,23 @@ supabase = init_supabase()
 st.set_page_config(page_title="원주 산불 방재 시뮬레이터", layout="wide")
 st.title("🌲 원주 지역 임도 기반 산불 확산 MVP 시뮬레이터 (엔진 분리형)")
 
-# 🔥 [핵심 추가] Streamlit 내부 컨테이너의 최대 가로폭 제한(Max-Width)을 풀고 100% 유연하게 만드는 CSS 주입
+# 🔥 [CSS 고도화] 브라우저 확대/축소(Ctrl+휠) 시 주변 웹 요소들이 지도를 밀어내지 못하도록 레이아웃 붕괴 방지
 st.markdown(
     """
     <style>
+    /* 1. 메인 본문 컨테이너가 무분별하게 압착되는 것을 방지 */
     .block-container {
-        max-width: 100% !important;
-        padding-left: 5% !important;
-        padding-right: 5% !important;
+        max-width: 95% !important;
+        padding-left: 2rem !important;
+        padding-right: 2rem !important;
+        margin: 0 auto !important;
+    }
+    
+    /* 2. 지도 이미지가 화면 높이에 비례하여 종횡비를 깨뜨리지 않고 온전히 확대/축소되도록 제어 */
+    .stImage img {
+        object-fit: contain !important;
+        max-height: 70vh !important; /* 브라우저 창 높이의 70%를 유지하며 절대 고수 */
+        width: 100% !important;
     }
     </style>
     """,
@@ -95,7 +104,8 @@ if st.button("🔥 산불 시뮬레이션 시작"):
     for step, status_matrix in enumerate(history):
         status_text.text(f"⏳ 화면 렌더링 중... Step: {step}/{len(history)-1}")
         
-        fig, ax = plt.subplots(figsize=(7, 5), tight_layout=True)
+        # 💡 [변경] 도화지의 물리적 크기를 약간 키우고 여백 자동 정렬 셋업 유지
+        fig, ax = plt.subplots(figsize=(8.5, 6), tight_layout=True)
         ax.imshow(terrain_np, cmap="gist_earth", origin="upper", alpha=0.6)
         
         if np.sum(road_np) > 0:
@@ -108,12 +118,12 @@ if st.button("🔥 산불 시뮬레이션 시작"):
         ax.set_title(f"Simulation Step: {step}")
         ax.axis("off")
         
-        # 차트를 이진 이미지 데이터로 구워 Streamlit의 강력한 이미지 뷰어로 전달합니다.
         buf = io.BytesIO()
-        fig.savefig(buf, format="png", bbox_inches="tight", dpi=140)
+        # 💡 [변경] dpi 해상도를 160으로 끌어올려 확대 시에도 깨지지 않는 픽셀 볼륨을 강제 부여합니다.
+        fig.savefig(buf, format="png", bbox_inches="tight", dpi=160)
         buf.seek(0)
         
-        # 이제 외부 박스 제한이 완전히 풀렸으므로 창 크기에 밀접하게 반응형(Responsive) 연동됩니다.
+        # 가로폭 제한을 수렴하는 이미지 렌더러 표출
         plot_spot.image(buf, use_container_width=True)
         
         plt.close(fig)
