@@ -20,7 +20,7 @@ def init_supabase() -> Client:
 supabase = init_supabase()
 
 st.set_page_config(page_title="산불 방재 시뮬레이터", layout="wide")
-st.title("산불 실시간 시뮬레이터 & MP4 다운로더 (v5.2)")
+st.title("산불 확산 시뮬레이터 (임도 방화선 효과 검증) ")
 
 # [CSS 고도화] 레이아웃 붕괴 방지
 st.markdown(
