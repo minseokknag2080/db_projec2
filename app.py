@@ -47,25 +47,61 @@ st.markdown(
 )
 
 # 2. Supabase DB에서 데이터 전량 고속 로드
-# @st.cache_data 
+@st.cache_data 
 def fetch_and_build_matrices():
-    response = supabase.table("grid_master").select("row_index, col_index, elevation, is_road").execute()
-    data = response.data
-    
+    data = []
+    start_index = 0
+    page_size = 1000    #서버 규격에 맞게 1000개씩 쪼개서 요청 
+
+    while True:
+        #대용량 리미트 해재: .range(0,85000)을 붙여 7만 9천 개 데이터를 끊김 없이 통째로 가져옴
+        response = (
+            supabase.table("grid_master")
+            .select("row_index, col_index, elevation, is_road")
+            .range(start_index, start_index + page_size -1)
+            .execute()
+        )
+
+        chunk = response.data
+        if not chunk: # 더 이상 가져올 데이터 없음
+            break
+            
+        data.extend(chunk)
+        start_index += page_size
+        
+        #데이터가 어무 많으므로 85,000개가 넘어가면 무한루프 방지를 위해 브레이크
+        if start_index > 85000:
+            break
+
+
+    #디버깅 포인트 1 - db에서 넘어온 데이터 행의 총 개수를 사이드 바에 출력 
+    st.sidebar.info(f"db에서 가져온 레코드 수: {len(data):,}개")
+
     terrain_matrix = np.zeros((315, 253))
     road_matrix = np.zeros((315, 253), dtype=bool)
     
+    #데이터 행렬 매핑 시작 
     for item in data:
         r = item['row_index']
         c = item['col_index']
         terrain_matrix[r, c] = item['elevation']
         road_matrix[r, c] = item['is_road']
-        
+        #문자열이나 숫자로 들어와도 bool로 강제 변환
+        road_matrix[r,c] = bool(item['is_road'])
+
     return terrain_matrix, road_matrix
 
 with st.spinner("Supabase DB에서 원주 정밀 격자 데이터를 동기화하는 중..."):
     terrain_np, road_np = fetch_and_build_matrices()
 st.success(f"✅ 원주 격자 공간 데이터베이스 로드 완료! (규격: {terrain_np.shape})")
+
+# #디버깅 코드 추가  - 추가로 데이터가 어떤 모양으로 들어오는지 상단에 출력 (3개만 임시 조회)
+# try:
+#     sample_res = supabase.table("grid_master").select("row_index, col_index, elevation, is_road"). limit(3).execute()
+#     st.sidebar.write("db 데이터 샘플(3개) :")
+#     st.sidebar.json(sample_res.data)
+# except Exception as e:
+#     st.sidebar.error(f"샘플 로드 실패: {e}")
 
 #디버깅 코드 추가 - 터미널이나 화면에 실제 고도 수치가 유효한지 출력
 st.sidebar.write(" 데이터베이스 정합성 실시간 검증 : ")
