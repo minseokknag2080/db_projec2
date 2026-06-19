@@ -19,8 +19,8 @@ def init_supabase() -> Client:
 
 supabase = init_supabase()
 
-st.set_page_config(page_title="원주 산불 방재 시뮬레이터", layout="wide")
-st.title("🌲 원주 용수골 산불 실시간 시뮬레이터 & MP4 다운로더 (v5.2)")
+st.set_page_config(page_title="산불 방재 시뮬레이터", layout="wide")
+st.title("산불 실시간 시뮬레이터 & MP4 다운로더 (v5.2)")
 
 # [CSS 고도화] 레이아웃 붕괴 방지
 st.markdown(
@@ -103,10 +103,7 @@ st.sidebar.write("")
 # 2. 경도 가중치 반영 비율 및 기준 가이드
 slope_coefficient = st.sidebar.slider("경도(고도 차이) 가중치", 0.01, 0.10, 0.03, 0.01)
 st.sidebar.caption(
-    "💡 **경도 가중치 가이드라인 (Rothermel 화선 공식 기반)**\n"
-    "- 🟢 **0.01 ~ 0.02**: 평탄한 구릉지 및 완만한 경사\n"
-    "- 🔵 **0.03**: **치악산 산악 지형 평균 가중치**\n"
-    "- 🔴 **0.06 이상**: 계곡 절벽 및 급경사 환경 (상향 확산 폭발)"
+    "💡 **경도 가중치 (Rothermel 화선 공식 기반)**\n"
 )
 st.sidebar.write("---")
 
