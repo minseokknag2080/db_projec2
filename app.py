@@ -133,22 +133,39 @@ if st.button("🔥 산불 시뮬레이션 가동"):
             max_steps=max_steps
         )
     
-    # 4. 애니메이션 실시간 렌더링
+    # 4. 애니메이션 실시간 렌더링 (거리 축 및 고도 컬러바 고도화)
     for step, status_matrix in enumerate(history):
         status_text.text(f"⏳ 화면 렌더링 중... Step: {step}/{len(history)-1}")
         
-        fig, ax = plt.subplots(figsize=(8.5, 6), tight_layout=True)
-        ax.imshow(terrain_np, cmap="gist_earth", origin="upper", alpha=0.6)
+        # 도화지 크기 설정 (우측 컬러바 영역 확보를 위해 가로를 9.5로 살짝 확장)
+        fig, ax = plt.subplots(figsize=(9.5, 6), tight_layout=True)
         
+        # 💡 [핵심 추가] 실제 거리(m)로 축 라벨링 매핑 (격자 수 * 90m)
+        # 가로 cols, 세로 rows 규격을 실제 미터 스케일로 변환하여 보여줍니다.
+        extent_m = [0, cols * 90, rows * 90, 0] # [xmin, xmax, ymin, ymax] (origin='upper' 대응)
+        
+        # 지형 매핑 및 컬러바 타겟 지정을 위해 변수(im)에 할당
+        im = ax.imshow(terrain_np, cmap="gist_earth", origin="upper", alpha=0.6, extent=extent_m)
+        
+        # 임도 격자 오버레이 (실제 거리 스케일 동기화)
         if np.sum(road_np) > 0:
-            ax.imshow(np.ma.masked_where(~road_np, road_np), cmap="Blues_r", origin="upper", alpha=0.9)
+            ax.imshow(np.ma.masked_where(~road_np, road_np), cmap="Blues_r", origin="upper", alpha=0.9, extent=extent_m)
             
+        # 산불 확산 격자 오버레이 (실제 거리 스케일 동기화)
         fire_mask = (status_matrix == 1) | (status_matrix == 2)
         if np.sum(fire_mask) > 0:
-            ax.imshow(np.ma.masked_where(~fire_mask, status_matrix), cmap="Reds", origin="upper", alpha=0.8)
+            ax.imshow(np.ma.masked_where(~fire_mask, status_matrix), cmap="Reds", origin="upper", alpha=0.8, extent=extent_m)
             
-        ax.set_title(f"Simulation Step: {step} | Wind: {wind_direction} ({wind_speed} m/s)")
-        ax.axis("off")
+        # 💡 [고도 컬러바 추가] 우측에 고도 수치(m) 가이드라인 생성
+        cbar = fig.colorbar(im, ax=ax, shrink=0.85, pad=0.03)
+        cbar.set_label("Elevation (m)", fontsize=10, weight='bold')
+        
+        # 💡 [물리 거리 축 라벨링] 
+        ax.set_xlabel("Horizontal Distance (m)", fontsize=10, weight='bold')
+        ax.set_ylabel("Vertical Distance (m)", fontsize=10, weight='bold')
+        
+        ax.set_title(f"Simulation Step: {step} | Wind: {wind_direction} ({wind_speed} m/s)", fontsize=12, weight='bold')
+        ax.grid(True, color='gray', linestyle='--', alpha=0.3) # 정밀 분석용 그리드 미세 추가
         
         buf = io.BytesIO()
         fig.savefig(buf, format="png", bbox_inches="tight", dpi=140)
