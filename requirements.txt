@@ -1,5 +1,9 @@
 streamlit
-supabase
 numpy
-scipy
 matplotlib
+supabase
+geopandas
+rasterio
+shapely
+imageio
+imageio-ffmpeg
